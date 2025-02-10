@@ -325,5 +325,13 @@ def cleanup_file(filename):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# Function to run Flask app
+def run_flask():
+    app.run(port=5000, debug=True, use_reloader=False)
+
+# Expose Flask app using ngrok
+public_url = ngrok.connect(5000).public_url
+print(f"Public URL: {public_url}")
+
+# Run Flask app in a separate thread
+Thread(target=run_flask).start()
