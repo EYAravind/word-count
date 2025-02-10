@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Extraction Tool (WET)</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container mt-3">
+        <div class="d-flex align-items-center mb-3">
+            <img src="static/images/main_logo.png" alt="Logo" class="logo me-2">
+            <h1 class="mb-0 maintitle">Word Extraction Tool (WET)</h1>
+        </div>
+        <p class="text-center text-muted">Drag and drop a file into one of the boxes below or click to upload.</p>
+        <div class="info-icon" onclick="showPopup()">
+            <span>Click to know</span>ℹ️
+        </div>
+        <div class="row g-4">
+            <!-- Tool Boxes -->
+            <div class="col-sm-3">
+                <div class="tool-box" id="riseTool" data-tool="rise_tool">
+                    <h3>Rise</h3>
+                    <p>Drop your document here or <strong>Click to upload</strong>.</p>
+                    <input type="file" class="file-input" accept=".docx">
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="tool-box" id="storylineTool" data-tool="storyline_tool">
+                    <h3>Storyline</h3>
+                    <p>Drop your document here or <strong>Click to upload</strong>.</p>
+                    <input type="file" class="file-input" accept=".docx">
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="tool-box" id="contentBuilderTool" data-tool="content_builder_tool">
+                    <h3>Content Builder</h3>
+                    <p>Drop your document here or <strong>Click to upload</strong>.</p>
+                    <input type="file" class="file-input" accept=".docx">
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="tool-box" id="htmlTool" data-tool="html_tool">
+                    <h3>HTML</h3>
+                    <p>Drop your document here or <strong>Click to upload</strong>.</p>
+                    <input type="file" class="file-input" accept=".docx">
+                </div>
+            </div>
+            <!-- New textarea for sections_to_remove -->
+            <!-- <button type="button" class="advanced-button" onclick="toggleAdvanced()">Advanced</button>
+            <div id="advanced-section" class="advanced-section">
+                <label for="sections-to-remove">Enter Sections to Remove (comma-separated):</label>
+                <textarea id="sections-to-remove" name="sections_to_remove"
+                    placeholder="E.g., Navigation, Lessons"></textarea>
+                <br><br>
+            </div> -->
+        </div>
+        <div id="statusMessage" class="text-center"></div>
+        <div class="note-section">
+            <div class="icon">⚠️</div>
+            <div>
+                <p><strong>Note:</strong> The output file is the best possible version of a cleaner Word
+                    count document. However, you may need to manually edit or clean it further to achieve
+                    the desired output.</p>
+            </div>
+        </div>
+        <div id="detailsPopup" class="popup-overlay d-none">
+            <div class="popup-content">
+                <div class="details">
+                    <h1 class="text-mid">Things to remember</h1>
+                    <p class="text-left">This tool is designed to automatically clean an existing Word document by
+                        removing unwanted text, rows, columns, and characters, and reformatting it.</p>
+                    <p class="text-left">For desired results, kindly use the extracted Word document from Storyline,
+                        Rise, or Content Builder only. DO NOT use a storyboard as an input file.</p>
+                    <p class="text-left">Follow these steps to get started:</p>
+                    <ol class="text-left">
+                        <li>Before using this tool, ensure you have the Word output from Storyline, Rise, or Content
+                            Builder handy. For Rise, the direct output is in PDF format. Convert it to Word before using
+                            it as input.</li>
+                        <li>Drag and drop the input file into the relevant box shown below. Remember, the tool will not
+                            allow you to upload the wrong file. You can also upload the file by browsing your folders
+                            and attaching it.</li>
+                        <li>Click Submit to start processing. The output file will be generated in a few seconds and
+                            automatically downloaded to your Downloads folder.</li>
+                        <li>You can copy and use the output file for further revision or enhancement.</li>
+                    </ol>
+                    <div id="statusMessage" class="text-center"></div>
+                    <div class="note-section">
+                        <div class="icon">⚠️</div>
+                        <div>
+                            <p><strong>Note:</strong> The output file is the best possible version of a cleaner Word
+                                count document. However, you may need to manually edit or clean it further to achieve
+                                the desired output.</p>
+                        </div>
+                    </div>
+
+                    <button id="closePopup" class="btn btn-primary mt-3">OK I Understood</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelectorAll('.tool-box').forEach(box => {
+            const fileInput = box.querySelector('.file-input');
+            const tool = box.getAttribute('data-tool');
+            const statusMessage = document.getElementById('statusMessage');
+            let processButton; // Variable for the dynamically added button
+            let downloadButton; // Variable for the dynamically added download button
+
+            box.addEventListener('click', () => fileInput.click());
+
+            box.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                box.style.backgroundColor = "#eaf2ff";
+            });
+
+            box.addEventListener('dragleave', () => {
+                box.style.backgroundColor = "";
+            });
+
+            box.addEventListener('drop', (e) => {
+                e.preventDefault();
+                box.style.backgroundColor = "";
+                fileInput.files = e.dataTransfer.files;
+                showProcessButton(fileInput.files[0], tool);
+            });
+
+            fileInput.addEventListener('change', () => {
+                showProcessButton(fileInput.files[0], tool);
+            });
+
+            function showProcessButton(file, tool) {
+                // Clear any previous status message
+                statusMessage.innerHTML = "";
+
+                // Create a "Process" button dynamically
+                processButton = document.createElement('button');
+                processButton.className = "btn btn-primary mt-3";
+                processButton.textContent = "Process File";
+
+                // Display a message indicating the file is ready
+                statusMessage.innerHTML = `
+            <p class='text-info'>File ready for processing: <strong>${file.name}</strong></p>
+        `;
+                statusMessage.appendChild(processButton);
+
+                // Add a click event listener to the button
+                processButton.addEventListener('click', () => processFile(file, tool));
+            }
+
+            function processFile(file, tool) {
+                // Disable the "Process" button to prevent multiple clicks
+                processButton.disabled = true;
+                processButton.textContent = "Processing...";
+
+                const formData = new FormData();
+                formData.append('tool', tool);
+                formData.append('file', file);
+                //const sectionsToRemove = document.getElementById('sections-to-remove').value;
+                //formData.append('sections_to_remove', sectionsToRemove);
+
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData,
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'error') {
+                            statusMessage.innerHTML = `<p class='text-danger'>${data.message}</p>`;
+                        } else {
+
+                            const filename = file.name;
+                            // Create a download button dynamically
+                            downloadButton = document.createElement('a');
+                            downloadButton.className = "btn btn-primary mt-3";
+                            downloadButton.href = data.download_url;
+                            downloadButton.textContent = "Download Processed File";
+                            downloadButton.setAttribute('download', '');
+
+                            // Add click event to handle cleanup after download
+                            downloadButton.addEventListener('click', () => {
+                                setTimeout(() => {
+                                    cleanupAfterDownload(filename);
+                                }, 1000); // Wait briefly to allow download to start
+                            });
+
+                            // Update the status message
+                            statusMessage.innerHTML = `
+                        <p class='text-success'>${data.message}</p>
+                    `;
+                            statusMessage.appendChild(downloadButton);
+                        }
+                    })
+                    .catch(() => {
+                        statusMessage.innerHTML = "<p class='text-danger'>An error occurred. Please try again.</p>";
+                    });
+            }
+
+            function cleanupAfterDownload(filename) {
+                // Send a request to delete the file from the server
+                fetch(`/uploads/${filename}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            console.log("File successfully removed from the server.");
+                        } else {
+                            console.error("Error while removing file:", data.message);
+                        }
+                    })
+                    .catch(error => console.error("An error occurred during cleanup:", error));
+                // Clear the input file, status message, and buttons
+                fileInput.value = ""; // Clear the file input
+                statusMessage.innerHTML = ""; // Clear the status message
+            }
+        });
+
+        function toggleAdvanced() {
+            const advancedSection = document.getElementById("advanced-section");
+            advancedSection.style.display =
+                advancedSection.style.display === "none" || advancedSection.style.display === ""
+                    ? "flex"
+                    : "none";
+        }
+
+        // Function to show the popup
+        function showPopup() {
+            document.getElementById('detailsPopup').classList.remove('d-none');
+        }
+
+        // Function to hide the popup
+        function hidePopup() {
+            document.getElementById('detailsPopup').classList.add('d-none');
+        }
+
+        // Add event listener to the OK button
+        document.getElementById('closePopup').addEventListener('click', hidePopup);
+
+        // Optionally, trigger the popup on page load or button click
+        window.addEventListener('load', showPopup); // Automatically shows on page load
+        // Or call showPopup() when a specific button or element is clicked
+    </script>
+</body>
+
+</html>
